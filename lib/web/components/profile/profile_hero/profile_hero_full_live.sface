@@ -63,7 +63,7 @@
         </div>
 
         {#for circle <- Bonfire.Me.Users.Circles.list_my(@user)}
-          <div class="badge">{circle}</div>
+          <div class="badge">{circle.name}</div>
         {/for}
 
         <div class="flex items-center mt-2 text-base-content">
