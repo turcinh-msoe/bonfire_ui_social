@@ -39,8 +39,8 @@
       </LivePatch>
       <span class="-mt-1 text-sm font-normal text-base-content text-opacity-70">@{e(@user, :character, :username, "")}</span>
 
-      {#for circle <- Bonfire.Me.Users.Circles.list_my(@user)}
-        <div class="badge">{circle.name}</div>
+      {#for circle <- Bonfire.Me.Users.Circles.list_visible(@user)}
+        <div class="badge">{circle.named.name}</div>
       {/for}
 
       <div
