@@ -39,9 +39,16 @@
       </LivePatch>
       <span class="-mt-1 text-sm font-normal text-base-content text-opacity-70">@{e(@user, :character, :username, "")}</span>
 
-      {#for circle <- Bonfire.Me.Users.Circles.list_visible(@user)}
-        <div class="badge">{circle.named.name}</div>
-      {/for}
+      {#case Bonfire.Me.Accounts.fetch_current(@user.accounted.account_id)}
+        {#match {:ok, account}}
+          {#for organization <- Bonfire.Me.SharedUsers.by_account(account)}
+            {#if e(organization, :shared_user, :label, "") != ""}
+              <div class="badge">{organization.shared_user.label}</div>
+            {/if}
+          {/for}
+        {#match _}
+          {!-- Failed to fetch; don't attempt to show organizations --}
+      {/case}
 
       <div
         class="mt-3">
