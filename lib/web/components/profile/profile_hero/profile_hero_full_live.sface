@@ -42,7 +42,9 @@
       {#case Bonfire.Me.Accounts.fetch_current(@user.accounted.account_id)}
         {#match {:ok, account}}
           {#for organization <- Bonfire.Me.SharedUsers.by_account(account)}
-            <div class="badge">{e(organization, :shared_user, :label, "")}</div>
+            {#if e(organization, :shared_user, :label, "") != ""}
+              <div class="badge">{organization.shared_user.label}</div>
+            {/if}
           {/for}
         {#match _}
           {!-- Failed to fetch; don't attempt to show organizations --}
