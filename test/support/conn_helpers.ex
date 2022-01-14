@@ -11,10 +11,8 @@ defmodule Bonfire.UI.Social.Test.ConnHelpers do
   @endpoint Bonfire.Common.Config.get!(:endpoint_module)
 
 
-  def render_surface(component, assigns, conn \\ nil) do
-    conn = conn || conn()
-    {:ok, view, html} = live_isolated(conn, component, assigns)
-    html
+  def render_surface(component, assigns \\ []) do
+    render_component(&component.render/1, Keyword.merge([__context__: %{}], assigns))
   end
 
   # defmacro render_surface(component, assigns) do
@@ -64,7 +62,7 @@ defmodule Bonfire.UI.Social.Test.ConnHelpers do
   def assert_flash_kind(flash, :error) do
     classes = floki_attr(flash, :class)
     assert "alert" in classes
-    assert "alert-danger" in classes
+    assert "alert-error" in classes
   end
 
   def assert_flash_kind(flash, :info) do

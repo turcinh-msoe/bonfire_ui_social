@@ -1,6 +1,7 @@
 
 <div
-  x-show.transition="title_open"
+  x-show="title_open"
+  x-transition
   class="border-b rounded-md">
   <Field name={:name}>
     <TextInput
@@ -16,19 +17,20 @@
       <button
         type="button"
         @click="summary_open = !summary_open"
-        :class="{'text-gray-100 underline' : summary_open === true}"
-        class="text-xs font-semibold tracking-wide text-gray-600 focus:outline-none dark:text-gray-300 hover:underline ">{l "Add a summary"}</button>
+        :class="{'text-primary-content-100 underline' : summary_open === true}"
+        class="text-xs font-semibold tracking-wide text-primary-content-600 focus:outline-none  hover:underline ">{l "Add a summary"}</button>
     </div>
 
     <div
-      x-show.transition="summary_open"
+      x-show="summary_open"
+      x-transition
       :if={Bonfire.Common.Config.get([:ui, :smart_input, :summary], []) == true}
       >
       <Field name={:summary}>
           <TextArea
             rows="4"
             opts={placeholder: "Write a short summary"}
-            class="block w-full h-20 text-sm transition-all duration-300 ease-in-out border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            class="block w-full h-20 text-sm transition-all duration-300 ease-in-out border-gray-300 rounded shadow-sm focus:ring-secondary-500 focus:border-indigo-500" />
         </Field>
       </div> -->
 </div>

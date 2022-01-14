@@ -1,10 +1,9 @@
 defmodule Bonfire.UI.Social.EditCircleLive do
   use Bonfire.Web, :live_component
-  import Bonfire.UI.Social.Integration
 
   def update(assigns, socket) do
 
-      with {:ok, circle} <- Bonfire.Me.Users.Circles.get(assigns.id, current_user(assigns)) |> repo().maybe_preload(encircles: [:subject_profile, :subject_character]) do
+      with {:ok, circle} <- Bonfire.Me.Users.Circles.get(assigns.id, current_user(assigns)) |> repo().maybe_preload(encircles: [subject: [:profile, :character]]) do
         IO.inspect(circle)
 
       # TODO: paginate

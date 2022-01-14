@@ -1,73 +1,54 @@
 
 <div class={
-  "mt-2",
-  "showing_within:thread -mt-1 ml-12": e(assigns, :showing_within, nil) == :thread,
-  "showing_within:notifications ml-7": e(assigns, :showing_within, nil) == :notifications,
-  "reply_to": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) == nil and e(@activity, :id, nil) == nil  
+  "showing_within:thread ml-1": e(assigns, :showing_within, nil) == :thread,
+  "showing_within:feed mt-1": e(assigns, :showing_within, nil) == :feed,
+  "showing_within:notifications": e(assigns, :showing_within, nil) == :notifications,
+  "reply_to": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) == nil and e(@activity, :id, nil) == nil,
+  "reply_message": e(@activity, :replied, :reply_to_id, nil)
 }
-   x-cloak 
    x-data="{content_open: false}">
-    {#if e(assigns, :viewing_main_object, nil) !=true and e(post_content(@object), :name, nil)}
+
+    <div :if={e(post_content(@object), :name, nil)}>
+
       <button
-        @click="{content_open = true}"
+        @click="content_open = true"
         x-show="content_open == false"
-        class="flex items-center font-semibold text-left text-md text-base-content hover:underline">
-        { rich e(post_content(@object), :name, "Title")} {l "(Read more)"}
+        class="flex items-center text-left text-md text-base-content ">
+        <span class="mr-1 hover:underline">{ rich e(post_content(@object), :name, "CW")} </span> <div class="font-medium capitalize text-opacity-80 btn btn-xs">{l "read post"}</div>
       </button>
       <button
-        @click="{content_open = false}"
+        @click="content_open = false"
         x-show="content_open"
-        class="flex items-center font-semibold text-left text-md text-base-content hover:underline">
-        {rich e(post_content(@object), :name, "Title")} {l "(Read less)"}
+        class="flex items-center text-left text-md text-base-content ">
+        <span class="mr-1 hover:underline">{rich e(post_content(@object), :name, "CW")} </span>  <div class="font-medium capitalize text-opacity-80 btn btn-xs">{l "hide post"}</div>
       </button>
-      <div 
+
+    </div>
+
+      
+    <div
+      x-show={if e(post_content(@object), :name, nil), do: "content_open"}
+      x-transition.scale.origin.top >
+      <div
+        :if={e(post_content(@object), :summary, nil)}
         class="font-light prose max-w-prose">
         {rich e(post_content(@object), :summary, "")}
       </div>
+
       <div
-        x-show="content_open"
-        x-transition:enter="transition ease-out duration-100"
-        x-transition:enter-start="transform opacity-0 scale-95"
-        x-transition:enter-end="transform opacity-100 scale-100"
-        x-transition:leave="transition ease-in duration-75"
-        x-transition:leave-start="transform opacity-100 scale-100"
-        x-transition:leave-end="transform opacity-0 scale-95"
-        class="prose object_body max-w-prose">
+        data-id={"object_body"}
+        :if={e(post_content(@object), :html_body, nil)}
+        class={"prose object_body max-w-prose"}>
         {rich e(post_content(@object), :html_body, "")}
       </div>
 
-    {#elseif e(assigns, :viewing_main_object, nil) !=true and e(post_content(@object), :name, nil) != true}      
+    </div>
 
-      <div
-        class="prose object_body max-w-prose">
-        {rich e(post_content(@object), :html_body, "...")}
-      </div>
-    
-    {#else}
-
-      <h2 
-        :if={e(post_content(@object), :name, nil)}
-        class="mb-4 text-3xl font-bold text-base-content">
-        {rich e(post_content(@object), :name, "Title")}
-      </h2>
-
-        {#if e(post_content(@object), :summary, nil)}
-          <h3 class="text-xs tracking-wider text-gray-600 uppercase dark:text-gray-300">{l "Summary"}</h3>
-          <LiveRedirect to={@permalink}>
-            <div class="mb-2 prose text-base-content max-w-prose">{rich e(post_content(@object), :summary, "")}</div>
-          </LiveRedirect>
-        {/if}
-
-        <article class={"prose text-xl max-w-prose mt-4", "prose max-w-prose dark:prose-light": e(assigns, :viewing_main_object, nil)}>
-          {rich e(post_content(@object), :html_body, "...")}
-        </article>
-
-        <div class="mt-4 mb-2">
-          <Bonfire.UI.Social.Activity.DateAgoLive 
-          permalink={@permalink}
-          viewing_main_object={e(assigns, :viewing_main_object, nil)}
-          date_ago={@date_ago}
-          verb_display={@verb_display} />
-        </div>
-    {/if}
+    <div class="mt-4 mb-2" :if={e(assigns, :viewing_main_object, nil)} >
+      <Bonfire.UI.Social.Activity.DateAgoLive 
+        permalink={@permalink}
+        viewing_main_object={e(assigns, :viewing_main_object, nil)}
+        date_ago={@date_ago}
+        verb_display={@verb_display} />
+    </div>
 </div>

@@ -1,10 +1,9 @@
-<main
-  class="mx-3 mb-3 md:flex md:mx-0">
-  <section class="mx-auto shadow-lg bg-base-100 rounded-box w-center">
-   <Bonfire.UI.Social.PageHeaderLive
+<main class="h-full md:flex md:mx-0">
+  <section class="w-full h-full mx-auto md:rounded md:shadow bg-base-100">
+    <Bonfire.UI.Social.PageHeaderLive
       page_title={@page_title}
     />
-    <div class="border-t-8 border-base-200 md:mx-0 text-base-content">
+    <div class="border-t-4 border-base-300 md:mx-0 text-base-content">
       <Bonfire.UI.Social.FeedLive 
         id={@feed_id}
         feed={@feed}

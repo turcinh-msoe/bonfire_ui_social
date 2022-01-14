@@ -1,15 +1,14 @@
 defmodule Bonfire.UI.Social.ActivityLive do
   use Bonfire.Web, :stateless_component
-  import Bonfire.UI.Social.Integration
+
   alias Bonfire.Social.Activities
   require Logger
 
   prop activity, :map
   prop object, :any
-  prop viewing_main_object, :boolean
+  prop viewing_main_object, :boolean, default: false
   prop showing_within, :any, default: :feed
-  prop hide_reply, :boolean
-  prop reply_click, :any
+  prop hide_reply, :boolean, default: false
 
   # TODO: put in config and/or autogenerate with Verbs genserver
   @reply_verbs ["reply","respond"]
@@ -51,6 +50,7 @@ defmodule Bonfire.UI.Social.ActivityLive do
   assigns = assigns
     |> assigns_merge(
         object: activity.object,
+        object_id: e(activity.object, :id, "no-object"),
         date_ago: date_from_now(activity.object),
         activity: activity |> Map.drop([:object]),
         activity_object_components: components,
@@ -66,26 +66,27 @@ defmodule Bonfire.UI.Social.ActivityLive do
     ~F"""
     <div
       class={
-      "activity p-3",
-      "main_reply_to border-l-4 border-base-200 pl-2 py-0 my-2 pr-0": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) == nil and e(@activity, :id, nil) == nil, # showing a quoted reply_to
+      "activity p-3 relative pl-16",
+      "showing_within:feed": e(assigns, :showing_within, nil) == :feed,
+      "main_reply_to mb-2 p-2 mt-2 relative border-l-4 border-l-base-300 border border-base-200 rounded-sm bg-base-300 bg-opacity-20": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) == nil and e(@activity, :id, nil) == nil, # showing a quoted reply_to
       "showing_within:thread": e(assigns, :showing_within, nil) == :thread,
-      "showing_within:notifications ml-7 px-0": e(assigns, :showing_within, nil) == :notifications,
-      "activity_regular": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) != nil and e(@activity, :id, nil) != nil,
+      "showing_within:notifications": e(assigns, :showing_within, nil) == :notifications,
+      "reply": e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) != nil and e(@activity, :id, nil) != nil,
       }>
       {#for {component, component_assigns} when is_atom(component) <- e(assigns, :activity_object_components, [])}
         <Surface.Components.Dynamic.Component
           module={component}
           activity={e(component_assigns, :activity, @activity)}
           object={e(component_assigns, :object, @object)}
+          object_id={e(component_assigns, :object_id, @object_id)}
           date_ago={e(component_assigns, :date_ago, @date_ago)}
           verb={e(component_assigns, :verb, @verb)}
           verb_display={e(component_assigns, :verb_display, @verb_display)}
           permalink={e(component_assigns, :permalink, @permalink)}
-          viewing_main_object={e(component_assigns, :viewing_main_object, @viewing_main_object)}
-          hide_reply={e(component_assigns, :hide_reply, @hide_reply)}
-          reply_click={e(component_assigns, :reply_click, @reply_click)}
+          viewing_main_object={e(component_assigns, :viewing_main_object, e(assigns, :viewing_main_object, false))}
+          hide_reply={e(component_assigns, :hide_reply, e(assigns, :hide_reply, false))}
           created_verb_display={@created_verb_display}
-          showing_within={@showing_within}
+          showing_within={e(assigns, :showing_within, :feed)}
           profile={e(component_assigns, :profile, nil)}
           character={e(component_assigns, :character, nil)}
         />
@@ -112,38 +113,47 @@ defmodule Bonfire.UI.Social.ActivityLive do
   # replies (when shown in notifications)
   def component_activity_subject(verb, activity, %{showing_within: :notifications}) when verb in @reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectMinimalLive, %{verb: verb}}]
   # create (or reply) activities
-  def component_activity_subject(verb, %{subject_profile: %{id: _} = profile, subject_character: %{id: _} = character}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}}]
-  def component_activity_subject(verb, %{subject_profile: %{id: _} = profile}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: nil}}]
-  def component_activity_subject(verb, %{subject_character: %{id: _} = character}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: nil, character: character}}]
+  def component_activity_subject(verb, %{subject: %{profile: %{id: _} = profile, character: %{id: _} = character}}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}}]
+  def component_activity_subject(verb, %{subject: %{profile: %{id: _} = profile}}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: nil}}]
+  def component_activity_subject(verb, %{subject: %{character: %{id: _} = character}}, _) when verb in @create_or_reply_verbs, do: [{Bonfire.UI.Social.Activity.SubjectLive, %{profile: nil, character: character}}]
   # other
   def component_activity_subject(verb, activity, _), do: [component_activity_maybe_creator(activity)]
 
 
-  def component_activity_maybe_creator(%{object_created: %{
+  def component_activity_maybe_creator(%{created: %{
     creator_profile: %{id: _} = profile,
     creator_character: %{id: _} = character
-    } = _object_created}), do: {Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}}
+    }}), do: component_activity_maybe_creator(%{profile: profile, character: character})
+
+  def component_activity_maybe_creator(%{
+    profile: %{id: _} = profile,
+    character: %{id: _} = character
+    } = _creator), do: {Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}}
 
   def component_activity_maybe_creator(%{creator: %{
     profile: %{id: _} = profile,
     character: %{id: _} = character
-    } = _object_creator}), do: {Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}}
+    } = creator}), do: component_activity_maybe_creator(creator)
 
+  def component_activity_maybe_creator(%{provider: %{id: _}}), do: Bonfire.UI.Social.Activity.ProviderReceiverLive
+  def component_activity_maybe_creator(%{primary_accountable: %{id: _} = primary_accountable}), do: {Bonfire.UI.Social.Activity.ProviderReceiverLive, %{provider: primary_accountable}}
+  def component_activity_maybe_creator(%{receiver: %{id: _}}), do: Bonfire.UI.Social.Activity.ProviderReceiverLive
 
-  def component_activity_maybe_creator(%{provider: _}), do: Bonfire.UI.Social.Activity.ProviderReceiverLive
-  def component_activity_maybe_creator(%{primary_accountable: primary_accountable}), do: {Bonfire.UI.Social.Activity.ProviderReceiverLive, %{provider: primary_accountable}}
-  def component_activity_maybe_creator(%{receiver: _}), do: Bonfire.UI.Social.Activity.ProviderReceiverLive
-
-  def component_activity_maybe_creator(%{created: created} = object), do: object |> repo().maybe_preload(created: [creator: [:profile, :character]]) |> Map.get(:created) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{created: _created} = object), do: object |> repo().maybe_preload(created: [creator: [:profile, :character]]) |> e(:creator, :created, nil) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{creator: _} = object), do: object |> repo().maybe_preload(creator: [:profile, :character]) |> e(:creator, nil) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{provider: _, receiver: _} = object), do: object |> repo().maybe_preload(provider: [:profile, :character], receiver: [:profile, :character]) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{provider: _} = object), do: object |> repo().maybe_preload(provider: [:profile, :character]) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{receiver: _} = object), do: object |> repo().maybe_preload(receiver: [:profile, :character]) |> component_activity_maybe_creator()
+  def component_activity_maybe_creator(%{primary_accountable: _} = object), do: object |> repo().maybe_preload(primary_accountable: [:profile, :character]) |> component_activity_maybe_creator()
 
   # FIXME: subjects don't showed up for economic activities, but they do if you uncomment this
-  def component_activity_maybe_creator(%{subject_character: %{id: _} = character, subject_profile: %{id: _} = profile}), do: {Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}} #|> IO.inspect
+  def component_activity_maybe_creator(%{subject: %{character: %{id: _} = character, profile: %{id: _} = profile}}), do: {Bonfire.UI.Social.Activity.SubjectLive, %{profile: profile, character: character}} #|> IO.inspect
 
   def component_activity_maybe_creator(%{object: %{} = object}), do: component_activity_maybe_creator(object)
 
   def component_activity_maybe_creator(activity) do
      Logger.error("ActivityLive: could not find the creator of #{inspect activity}")
-     nil
+     Bonfire.UI.Social.Activity.SubjectLive
   end
 
   def component_maybe_reply_to(verb, activity, showing_within \\ nil)
@@ -223,13 +233,10 @@ defmodule Bonfire.UI.Social.ActivityLive do
     []
   end
 
-  def component_object(_, %{object: %Bonfire.Data.Social.Post{}}), do: [Bonfire.UI.Social.Activity.NoteLive]
-  def component_object(_, %{object: %Bonfire.Data.Social.Message{}}), do: [Bonfire.UI.Social.Activity.NoteLive]
   def component_object(_, %{object: %{post_content: %Bonfire.Data.Social.PostContent{}}}), do: [Bonfire.UI.Social.Activity.NoteLive]
-  def component_object(_, %{object: %Bonfire.Data.Social.PostContent{}}), do: [Bonfire.UI.Social.Activity.NoteLive]
-  def component_object(_, %{object: %Bonfire.Data.Identity.User{}}), do: [Bonfire.UI.Social.Activity.CharacterLive]
   # def component_object(_, %{object: %{profile: _}}), do: [Bonfire.UI.Social.Activity.CharacterLive]
   # def component_object(_, %{object: %{character: _}}), do: [Bonfire.UI.Social.Activity.CharacterLive]
+
 
   def component_object(_, %{object: %{} = object}) do
     case Bonfire.Common.Types.object_type(object) do
@@ -249,6 +256,10 @@ defmodule Bonfire.UI.Social.ActivityLive do
   end
 
 
+  def component_for_object_type(type, object) when type in [Bonfire.Data.Social.Post], do: [Bonfire.UI.Social.Activity.NoteLive]
+  def component_for_object_type(type, object) when type in [Bonfire.Data.Social.Message], do: [Bonfire.UI.Social.Activity.NoteLive]
+  def component_for_object_type(type, object) when type in [Bonfire.Data.Social.PostContent], do: [Bonfire.UI.Social.Activity.NoteLive]
+  def component_for_object_type(type, object) when type in [Bonfire.Data.Identity.User], do: [Bonfire.UI.Social.Activity.CharacterLive]
   def component_for_object_type(type, object) when type in [Bonfire.Classify.Category], do: [Bonfire.UI.Social.Activity.CategoryLive]
   def component_for_object_type(type, object) when type in [ValueFlows.EconomicEvent], do: [Bonfire.UI.Social.Activity.EconomicEventLive.activity_component(object)]
   def component_for_object_type(type, object) when type in [ValueFlows.EconomicResource], do: [Bonfire.UI.Social.Activity.EconomicResourceLive]
@@ -256,8 +267,8 @@ defmodule Bonfire.UI.Social.ActivityLive do
   # def component_for_object_type(type, object) when type in [ValueFlows.Process], do: [Bonfire.UI.Social.Activity.ProcessListLive.activity_component(object)] # TODO: choose between Task and other Intent types
   def component_for_object_type(type, object) when type in [ValueFlows.Process], do: [{Bonfire.Common.Config.get([:ui, :default_instance_feed_previews, :process], Bonfire.UI.Social.Activity.ProcessListLive), object: Bonfire.UI.Social.Activity.ProcessListLive.prepare(object)}]
   def component_for_object_type(type, _object) do
-    Logger.warn("ActivityLive: no component available for object_type: #{inspect(type) }")
-    [Bonfire.UI.Social.Activity.UnknownLive]
+    Logger.warn("ActivityLive: no component available for object_type: #{inspect(type)}, fallback to UnknownLive")
+    [{Bonfire.UI.Social.Activity.UnknownLive, %{object_type: type}}]
   end
 
   def component_actions(_, _, %{activity_inception: true}), do: []

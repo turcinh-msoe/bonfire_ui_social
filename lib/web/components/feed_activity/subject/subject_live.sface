@@ -1,62 +1,63 @@
-{#if e(assigns, :showing_within, nil) == :thread}
+{#if  e(@object, :id, nil) != nil and e(@activity, :replied, :reply_to_id, nil) == nil and e(@activity, :id, nil) == nil}
+  <div class={"flex items-center -mb-2"}>
+    <div class="flex justify-between flex-1">
+      <div class="flex items-center text-sm font-medium text-base-content">
+        <LiveRedirect
+          aria-label={e(@activity, :subject, :character, :username, "") <> " profile"}
+          class="hover:underline subject_replied text-opacity-70"
+          to={path(e(@activity, :subject, :character, nil))}>
+          {e(@activity, :subject, :profile, :name, "Anonymous")}
+        </LiveRedirect>
+      </div>
+      <Bonfire.UI.Social.Activity.RepliedDateAgoLive 
+        permalink={@permalink}
+        date_ago={@date_ago}
+      />
+    </div>
+  </div>
+
+{#elseif e(assigns, :showing_within, nil) == :thread}
   <div class={"flex items-center", "pl-1": e(@activity, :replied, :reply_to_id, nil)}>
-    <img 
-      class="inline-block object-cover w-8 h-8 bg-gray-100 mask mask-squircle" 
-      src={avatar_url(@profile)} 
-      alt="subject profile image" 
-      onerror="this.style.display='none'" >
-    <div class="ml-3">
-      <div class="flex items-baseline flex-1 space-x-1">
-        <div class="text-base font-bold text-base-content text-opacity-80">
-          <LiveRedirect
-            aria-label={e(@character, :username, "") <> " profile"}
-            class="font-semibold text-base-content hover:underline"
-            to={path(@character)}>
-            {e(@profile, :name, "Anonymous")}
-          </LiveRedirect>
-        </div>
-        <span class="text-sm text-base-content text-opacity-80">
-          <LiveRedirect  to={@permalink}>
-            {@date_ago}
-          </LiveRedirect>
-        </span>
-      </div>
+    <div class="absolute left-3">
+      <Bonfire.UI.Social.Activity.AvatarLive profile={@profile} />
     </div>
-  </div>
-{#elseif e(assigns, :viewing_main_object, nil)}
-  <div class="flex items-center">
-    <Bonfire.UI.Social.Activity.AvatarLive 
-      viewing_main_object={e(assigns, :viewing_main_object, false)} 
-      profile={@profile} 
-    />
-    
-    <div class="flex items-center justify-between flex-1 ml-3">
-      <div class="flex flex-col text-md">
+    <div class="flex items-baseline flex-1 space-x-1">
+      <div class="text-base font-bold text-base-content text-opacity-80">
         <LiveRedirect
           aria-label={e(@character, :username, "") <> " profile"}
-          class="font-semibold text-base-content subject_name hover:underline"
+          class="font-semibold text-base-content hover:underline"
           to={path(@character)}>
           {e(@profile, :name, "Anonymous")}
         </LiveRedirect>
-        <span class="text-md text-base-content text-opacity-60 subject_username text-light">@{e(@character, :username, "")}</span>
       </div>
+      <span>
+        <LiveRedirect class="ml-1 text-xs text-base-content text-opacity-60 subject_username text-light" to={@permalink}>
+          {@date_ago}
+        </LiveRedirect>
+      </span>
     </div>
   </div>
+
 {#else}
-  <div class="flex items-center">
-    <Bonfire.UI.Social.Activity.AvatarLive profile={@profile} />
-    
-    <div class="flex items-center justify-between flex-1 ml-3">
-      <div class="flex items-center text-md">
+  <div class="flex items-top ">
+    <div class="absolute left-3">
+      <Bonfire.UI.Social.Activity.AvatarLive profile={@profile} />
+    </div>
+    <div class="flex items-baseline justify-between flex-1">
+      <div class="flex items-baseline text-md">
         <LiveRedirect
+          opts={"data-id": "subject_name"}
           aria-label={e(@character, :username, "") <> " profile"}
-          class="font-semibold text-base-content subject_name hover:underline"
+          class="font-semibold text-base-content hover:underline"
           to={path(@character)}>
           {e(@profile, :name, "Anonymous")}
         </LiveRedirect>
-        <span class="ml-2 text-md text-base-content text-opacity-60 subject_username text-light">@{e(@character, :username, "")}</span>
+        <span
+         :if={e(@character, :username, nil)}
+         class="ml-1 text-sm text-base-content text-opacity-60 subject_username text-light">@{e(@character, :username, "")}</span>
       </div>
       <Bonfire.UI.Social.Activity.DateAgoLive 
+        :if={!@viewing_main_object}
         permalink={@permalink}
         date_ago={@date_ago}
         verb_display={@verb_display} />

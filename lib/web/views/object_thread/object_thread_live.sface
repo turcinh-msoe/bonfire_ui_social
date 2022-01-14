@@ -1,5 +1,5 @@
-<main class="mx-3 md:flex md:mx-0">
-  <section class="shadow-lg bg-base-100 rounded-box w-center mx-auto">
+<main class="flex flex-col md:mx-0">
+  <section class="w-full mx-auto rounded shadow bg-base-100">
     <Bonfire.UI.Social.PageHeaderLive
       :if={e(current_user(assigns), :id, nil)}
       page_title={@page_title}
@@ -7,17 +7,19 @@
     <Bonfire.UI.Social.BannerPreviousThreadLive activity={@activity} />
     <Bonfire.UI.Social.ActivityLive
       id={"main-"<> e(@thread_id, "")}
-      hide_reply={true}
       viewing_main_object={true}
       activity={@activity}
       object={@object}
     />
+  </section>
+  
+  <div>
     <Bonfire.UI.Social.ThreadLive 
       id={@thread_id}
       thread_id={@thread_id}
       activity={@activity}
       object={@object}
     />
-  </section>
+  </div>
 
 </main>
